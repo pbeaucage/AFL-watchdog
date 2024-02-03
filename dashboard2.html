@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AFL Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #dashboard {
+      max-width: 800px;
+      margin: auto;
+    }
+    .server-indicator {
+      display: inline-block;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    .indicator-light {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .reachable-indicator {
+      background-color: green;
+    }
+    .unreachable-indicator {
+      background-color: red;
+    }
+    .server-container {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .reachable {
+      background-color: chartreuse;
+    }
+    .unreachable {
+      background-color: darksalmon;
+      color: white;
+    }
+    .queue-section {
+      margin-top: 10px;
+    }
+    .foldable {
+      cursor: pointer;
+      text-decoration: underline;
+      color: blue;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .foldable-content {
+      display: none;
+    }
+    .show-all-button {
+      cursor: pointer;
+      text-decoration: underline;
+      color: blue;
+      display: block;
+    }
+    .hidden-tasks {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="dashboard">
+    <h1>AFL Dashboard</h1>
+    <div id="server-indicators"></div>
+    <p>Last Updated: <span id="lastUpdated"></span></p>
+    <div id="server-status"></div>
+  </div>
+
+  <script>
+    function toggleFoldable(foldable) {
+      const content = foldable.nextElementSibling;
+      content.style.display = (content.style.display === 'none' || content.style.display === '') ? 'block' : 'none';
+    }
+
+    function fetchAndUpdateData() {
+      // Replace 'YOUR_JSON_URL' with the actual URL of your JSON file
+const jsonUrl = 'status.json';
+
+      // Fetch JSON data from the specified URL
+      fetch(jsonUrl)
+        .then(response => response.json())
+        .then(jsonData => {
+          updateDashboard(jsonData);
+        })
+        .catch(error => console.error('Error fetching JSON:', error));
+    }
+
+    function updateDashboard(jsonData) {
+      document.getElementById("lastUpdated").innerText = jsonData.last_updated;
+
+      const serverStatusContainer = document.getElementById("server-status");
+      serverStatusContainer.innerHTML = "";
+
+      const serverIndicatorsContainer = document.getElementById("server-indicators");
+      serverIndicatorsContainer.innerHTML = "";
+      
+      Object.keys(jsonData).filter(key => key !== 'last_updated').forEach(serverName => {
+        const serverData = jsonData[serverName];
+        
+        const serverIndicator = document.createElement("div");
+        serverIndicator.className = "server-indicator";
+        
+        const indicatorLight = document.createElement("div");
+        indicatorLight.className = `indicator-light ${serverData.reachable && serverData.errors === '' ? 'reachable-indicator' : 'unreachable-indicator'}`;
+        indicatorLight.title = serverName;
+        indicatorLight.onclick = () => scrollToServer(serverName);
+        serverIndicator.appendChild(indicatorLight);
+
+        const serverNameElement = document.createElement("span");
+        serverNameElement.innerText = serverName;
+        serverNameElement.style.cursor = "pointer";
+        serverNameElement.onclick = () => scrollToServer(serverName);
+        serverIndicator.appendChild(serverNameElement);
+
+        serverIndicatorsContainer.appendChild(serverIndicator);
+
+        const serverInfoHTML = `
+          <div id="${serverName}-container" class="server-container ${serverData.reachable && serverData.errors === '' ? 'reachable' : 'unreachable'}">
+            <h2>${serverName}</h2>
+            <p>Reachable: ${serverData.reachable ? "Yes" : "No"}, State: ${serverData.state}, Errors: ${serverData.errors}</p>
+            <p>Driver Status: ${serverData.driver_status.join(', ')}</p>
+            <div class="queue-section">
+              ${renderQueueSection(serverData.queue)}
+            </div>
+          </div>
+        `;
+        serverStatusContainer.innerHTML += serverInfoHTML;
+      });
+    }
+
+    function renderQueueSection(queue) {
+      const queueSections = ["History", "Active", "Future"];
+      let sectionHTML = "";
+
+      queue.forEach((tasks, index) => {
+        const reversedTasks = index === 0 ? tasks.slice(0).reverse() : tasks;
+        const sectionTasksHTML = reversedTasks.length > 0 ? `
+          <div class="queue-section">
+            <h3>${queueSections[index]} Tasks</h3>
+            ${reversedTasks.slice(0, 10).map(task => renderTask(task)).join('')}
+            ${reversedTasks.length > 10 ? `
+              <div class="show-all-button" onclick="toggleHiddenTasks(this, ${index})">Show All</div>
+              <div class="hidden-tasks">
+                ${reversedTasks.slice(10).map(task => renderTask(task)).join('')}
+              </div>` : ''}
+          </div>` : '';
+        sectionHTML += sectionTasksHTML;
+      });
+
+      return sectionHTML;
+    }
+
+    function renderTask(task) {
+      return `
+        <div class="foldable" onclick="toggleFoldable(this)">
+          ${task.meta.started}: ${task.task.task_name} (${task.meta.exit_state})
+        </div>
+        <div class="foldable-content">
+          <pre>${JSON.stringify(task, null, 2)}</pre>
+        </div>
+      `;
+    }
+
+    function toggleHiddenTasks(button, index) {
+      const hiddenTasks = button.nextElementSibling;
+      hiddenTasks.style.display = (hiddenTasks.style.display === 'none' || hiddenTasks.style.display === '') ? 'block' : 'none';
+      button.innerText = (hiddenTasks.style.display === 'none') ? 'Show All' : 'Hide All';
+    }
+
+    function scrollToServer(serverName) {
+      const container = document.getElementById(`${serverName}-container`);
+      if (container) {
+        container.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    fetchAndUpdateData();
+    setInterval(fetchAndUpdateData, 60000);
+  </script>
+</body>
+</html>
