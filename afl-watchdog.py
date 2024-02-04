@@ -184,6 +184,6 @@ while True:
         os.system(f'wget -O ~/.afl/upload/{fname} {endpoint[1]}')
     if len(upload_endpoint)>0:
         print(f'--> performing SSH upload of status directory')
-        os.system(f'rsync -avh ~/.afl/upload/* {upload_endpoint}')
+        os.system(f'rsync -Lavh ~/.afl/upload/* {upload_endpoint}')
     print(f'now sleeping for {delay}s')
     time.sleep(delay)    
