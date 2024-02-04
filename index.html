@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AFL Dashboard</title>
+  <title>Status Dashboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -64,6 +64,55 @@
     .hidden-tasks {
       display: none;
     }
+    .image-viewer {
+      margin-top: 20px;
+    }
+    .tab {
+      display: inline-block;
+      padding: 10px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      margin-right: 5px;
+    }
+    .selected-tab {
+      background-color: #ddd;
+    }
+    .camera-selector-container {
+      margin-top: 20px;
+    }
+
+    .toggle-images-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .toggle-images-button {
+      cursor: pointer;
+      display: inline-block;
+      padding: 10px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      margin-right: 5px;
+      background-color: #fff;
+
+    }
+
+    .image-container {
+      margin-top: 10px;
+    }
+    .camera-image {
+      max-width: 100%;
+      display: none;
+    }
+    .camera-image.show {
+      display: block;
+    }
+
+    .camera-images-container {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -71,10 +120,54 @@
     <h1>AFL Dashboard</h1>
     <div id="server-indicators"></div>
     <p>Last Updated: <span id="lastUpdated"></span></p>
+    <div class="toggle-images-container">
+      <div class="camera-selector-container" id="cameraSelectorContainer"></div>
+      <div class="toggle-images-button" onclick="toggleImages()">Show/Hide Images</div>
+    </div>
+
+    <div class="camera-images-container" id="cameraImagesContainer"></div>
+
     <div id="server-status"></div>
+
+    
   </div>
 
   <script>
+    let selectedCamera = 0;
+    let showImages = true;
+    let imagesVisible = true; // Add this line to initialize the variable
+
+ function toggleImages() {
+    const cameraImages = document.querySelectorAll('.camera-image');
+
+    imagesVisible = !imagesVisible;
+
+    cameraImages.forEach((image, index) => {
+      const isSelectedCamera = index === selectedCamera;
+      image.classList.toggle('show', isSelectedCamera && imagesVisible);
+    });
+  }
+
+    function selectCameraTab(tab, index) {
+      selectedCamera = index;
+      updateImageVisibility();
+
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(t => t.classList.remove('selected-tab'));
+      tab.classList.add('selected-tab');
+    }
+
+    function updateImageVisibility() {
+      const images = document.querySelectorAll('.camera-image');
+      images.forEach((image, index) => {
+        if (showImages && index === selectedCamera) {
+          image.classList.add('show');
+        } else {
+          image.classList.remove('show');
+        }
+      });
+    }
+
     function toggleFoldable(foldable) {
       const content = foldable.nextElementSibling;
       content.style.display = (content.style.display === 'none' || content.style.display === '') ? 'block' : 'none';
@@ -82,13 +175,14 @@
 
     function fetchAndUpdateData() {
       // Replace 'YOUR_JSON_URL' with the actual URL of your JSON file
-const jsonUrl = 'status.json';
+      const jsonUrl = 'status.json';
 
       // Fetch JSON data from the specified URL
       fetch(jsonUrl)
         .then(response => response.json())
         .then(jsonData => {
           updateDashboard(jsonData);
+          updateImageViewer(jsonData);
         })
         .catch(error => console.error('Error fetching JSON:', error));
     }
@@ -102,7 +196,7 @@ const jsonUrl = 'status.json';
       const serverIndicatorsContainer = document.getElementById("server-indicators");
       serverIndicatorsContainer.innerHTML = "";
       
-      Object.keys(jsonData).filter(key => key !== 'last_updated' and key !== 'cameras').forEach(serverName => {
+      Object.keys(jsonData).filter(key => key !== 'last_updated' && key !== 'cameras').forEach(serverName => {
         const serverData = jsonData[serverName];
         
         const serverIndicator = document.createElement("div");
@@ -125,7 +219,7 @@ const jsonUrl = 'status.json';
         const serverInfoHTML = `
           <div id="${serverName}-container" class="server-container ${serverData.reachable && serverData.errors === '' ? 'reachable' : 'unreachable'}">
             <h2>${serverName}</h2>
-            <p>Reachable: ${serverData.reachable ? "Yes" : "No"}, State: ${serverData.state}, Errors: ${serverData.errors}</p>
+             <p>Reachable: ${serverData.reachable ? "Yes" : "No"}, State: ${serverData.state}, Errors: ${serverData.errors}</p>
             <p>Driver Status: ${serverData.driver_status.join(', ')}</p>
             <div class="queue-section">
               ${renderQueueSection(serverData.queue)}
@@ -133,6 +227,36 @@ const jsonUrl = 'status.json';
           </div>
         `;
         serverStatusContainer.innerHTML += serverInfoHTML;
+      });
+    }
+
+   function updateImageViewer(jsonData) {
+      const cameras = jsonData.cameras || {};
+
+      const cameraSelectorContainer = document.getElementById("cameraSelectorContainer");
+      cameraSelectorContainer.innerHTML = '';
+
+      Object.entries(cameras).forEach(([cameraName, cameraImageSrc], index) => {
+        if (cameraName && cameraImageSrc) {
+          const tab = document.createElement("div");
+          tab.className = `tab ${index === selectedCamera ? 'selected-tab' : ''}`;
+          tab.innerText = cameraName;
+          tab.onclick = () => selectCameraTab(tab, index);
+          cameraSelectorContainer.appendChild(tab);
+        }
+      });
+
+      const cameraImagesContainer = document.getElementById("cameraImagesContainer");
+      cameraImagesContainer.innerHTML = '';
+
+      Object.entries(cameras).forEach(([cameraName, cameraImageSrc], index) => {
+        if (cameraName && cameraImageSrc) {
+          const image = document.createElement("img");
+          image.className = `camera-image ${index === selectedCamera && imagesVisible ? 'show' : ''}`;
+          image.src = cameraImageSrc;
+          image.alt = cameraName;
+          cameraImagesContainer.appendChild(image);
+        }
       });
     }
 
@@ -144,7 +268,7 @@ const jsonUrl = 'status.json';
         const reversedTasks = index === 0 ? tasks.slice(0).reverse() : tasks;
         const sectionTasksHTML = reversedTasks.length > 0 ? `
           <div class="queue-section">
-            <h3>${queueSections[index]}</h3>
+            <h3>${queueSections[index]} Tasks</h3>
             ${reversedTasks.slice(0, 10).map(task => renderTask(task)).join('')}
             ${reversedTasks.length > 10 ? `
               <div class="show-all-button" onclick="toggleHiddenTasks(this, ${index})">Show All</div>
@@ -161,12 +285,24 @@ const jsonUrl = 'status.json';
     function renderTask(task) {
       return `
         <div class="foldable" onclick="toggleFoldable(this)">
-          ${task.meta.started}: ${task.task.task_name} (${task.meta.exit_state})
+           ${task.meta.started}: ${task.task.task_name} (${task.meta.exit_state})
         </div>
         <div class="foldable-content">
           <pre>${JSON.stringify(task, null, 2)}</pre>
         </div>
       `;
+    }
+
+    function showAllTasks(button, index) {
+      const queueSection = button.parentNode;
+      const tasks = queueSection.querySelectorAll('.foldable');
+
+      tasks.forEach(task => {
+        const content = task.nextElementSibling;
+        content.style.display = 'block';
+      });
+
+      button.style.display = 'none';
     }
 
     function toggleHiddenTasks(button, index) {
