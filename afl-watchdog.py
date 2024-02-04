@@ -10,7 +10,7 @@ from slack_sdk.errors import SlackApiError
 import datetime
 import json
 
-config = json.load(open('~/.afl/watchdog-config.json','r'))
+config = json.load(open(os.path.expanduser('~/.afl/watchdog-config.json'),'r'))
 slack_token = config['slack_token']
 slack_channel = config['slack_channel'] 
 slack_shutoff_msg = config['slack_shutoff_msg']
@@ -88,7 +88,7 @@ while True:
     if len(image_endpoints)>0:
         status_dict['cameras'] = {}
         for camera,endpoint in image_endpoints.items():
-            status_dict['cameras'][endpoint[0]] = endpoint[1]
+            status_dict['cameras'][endpoint[0]] = camera
     for server in servers:
         if 'port' not in server.keys():
             server['port'] = '5000'
@@ -172,13 +172,13 @@ while True:
         if server['running_task_n_checks'] >= stuck_n_checks and 'server_stuck' not in server['suppress_alerts']:
             send_alert(f'{server["friendly_name"]} SERVER APPEARS STUCK running for last {server["last_task_n_checks"]} checks')
             server_status['errors'] += 'Server Stuck | '
-    json.dump(status_dict,open('~/.afl/upload/status.json','w'))
+    json.dump(status_dict,open(os.path.expanduser('~/.afl/upload/status.json'),'w'))
     print(f'--> fetching images for status board')
     for fname,endpoint in image_endpoints.items():
         print(f'    --> getting {fname} from {endpoint}')
-        os.system(f'wget -O ~/.afl/upload/{fname} {endpoint}')
+        os.system(f'wget -O ~/.afl/upload/{fname} {endpoint[1]}')
     if len(upload_endpoint)>0:
         print(f'--> performing SSH upload of status directory')
-        os.system(f'scp -r ~/.afl/upload/* {upload_endpoint}')
+        os.system(f'rsync -avh ~/.afl/upload/* {upload_endpoint}')
     print(f'now sleeping for {delay}s')
     time.sleep(delay)    
