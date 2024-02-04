@@ -120,11 +120,20 @@
   border-radius: 4px;
   display: inline-block;
 }
+#dashboard-header {
+  background-color: #3498db; /* Header background color */
+  color: #fff; /* Text color */
+  padding: 10px; /* Padding around the header content */
+  text-align: center; /* Center-align text */
+  font-size: 20px; /* Font size */
+  font-weight: bold; /* Bold text */
+  margin-bottom: 20px;
+}
   </style>
 </head>
 <body>
   <div id="dashboard">
-    <h1>AFL Dashboard</h1>
+    <div id="dashboard-header"></div>
     <div id="server-indicators"></div>
     <p>Last Updated: <span id="lastUpdated"></span></p>
     <div class="toggle-images-container">
@@ -196,14 +205,20 @@
 
     function updateDashboard(jsonData) {
       document.getElementById("lastUpdated").innerText = jsonData.last_updated;
+     
+      const aflSystemSerial = jsonData.afl_system_serial || ''; // Set default value if the field is missing
+      document.title = `AFL System Status: ${aflSystemSerial}`;
 
+      const mainPageHeader = document.getElementById("dashboard-header");
+      mainPageHeader.innerText = `AFL System Status: ${aflSystemSerial}`;
+    
       const serverStatusContainer = document.getElementById("server-status");
       serverStatusContainer.innerHTML = "";
 
       const serverIndicatorsContainer = document.getElementById("server-indicators");
       serverIndicatorsContainer.innerHTML = "";
       
-      Object.keys(jsonData).filter(key => key !== 'last_updated' && key !== 'cameras').forEach(serverName => {
+      Object.keys(jsonData).filter(key => key !== 'last_updated' && key !== 'cameras' && key !== 'afl_system_serial').forEach(serverName => {
         const serverData = jsonData[serverName];
         
         const serverIndicator = document.createElement("div");

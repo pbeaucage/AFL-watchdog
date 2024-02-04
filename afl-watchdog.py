@@ -40,7 +40,10 @@ def send_alert(text):
     alert_text = f"<!channel> {afl_system_serial}: {text}"
     if not is_muted():
         print(f'    --> Sent alert to Slack {alert_text}')
-        response = client.chat_postMessage(channel=slack_channel,text=alert_text)
+        try:
+            response = client.chat_postMessage(channel=slack_channel,text=alert_text)
+        except Exception:
+            print(f'Could not transmit to slack, continiung without alert in hope this resolves. {alert_text}')
     else:
         print(f'    --> Muted, did not send alert to Slack {alert_text}')
 
@@ -52,7 +55,7 @@ def is_muted():
     '''
     try:
         response = client.conversations_history(channel=slack_channel)
-    except SlackApiError as e:
+    except Exception as e:
         print(f"Error: {e}")
         return False
     for message in response['messages']:
@@ -89,6 +92,8 @@ while True:
         status_dict['cameras'] = {}
         for camera,endpoint in image_endpoints.items():
             status_dict['cameras'][endpoint[0]] = camera
+    status_dict['afl_system_serial'] = afl_system_serial
+
     for server in servers:
         if 'port' not in server.keys():
             server['port'] = '5000'
@@ -119,9 +124,9 @@ while True:
         try:
             c.login('WatchDog')
         except Exception:
+            server_status['reachable'] = False
             if 'server_down' not in server['suppress_alerts']:
                 send_alert(f'{server["friendly_name"]}: SERVER UNREACHABLE')
-                server_status['reachable'] = False
             continue
         server_status['reachable'] = True
 
@@ -175,7 +180,7 @@ while True:
     json.dump(status_dict,open(os.path.expanduser('~/.afl/upload/status.json'),'w'))
     print(f'--> fetching images for status board')
     for fname,endpoint in image_endpoints.items():
-        print(f'    --> getting {fname} from {endpoint}')
+        print(f'    --> getting {fname} from {endpoint[1]}, for display as {endpoint[0]}')
         os.system(f'wget -O ~/.afl/upload/{fname} {endpoint[1]}')
     if len(upload_endpoint)>0:
         print(f'--> performing SSH upload of status directory')
