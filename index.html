@@ -113,6 +113,13 @@
     .camera-images-container {
       margin-top: 20px;
     }
+    .driver-status-item {
+  border: 1px solid #ccc;
+  padding: 2px 5px;
+  margin: 2px;
+  border-radius: 4px;
+  display: inline-block;
+}
   </style>
 </head>
 <body>
@@ -215,12 +222,15 @@
         serverIndicator.appendChild(serverNameElement);
 
         serverIndicatorsContainer.appendChild(serverIndicator);
+        
+        const driverStatus = serverData.driver_status || [];
+        const driverStatusHTML = driverStatus.map(status => `<span class="driver-status-item">${status}</span>`).join(' ');
 
         const serverInfoHTML = `
           <div id="${serverName}-container" class="server-container ${serverData.reachable && serverData.errors === '' ? 'reachable' : 'unreachable'}">
             <h2>${serverName}</h2>
              <p>Reachable: ${serverData.reachable ? "Yes" : "No"}, State: ${serverData.state}, Errors: ${serverData.errors}</p>
-            <p>Driver Status: ${serverData.driver_status.join(', ')}</p>
+            <p>Driver Status: ${driverStatusHTML}</p>
             <div class="queue-section">
               ${renderQueueSection(serverData.queue)}
             </div>
