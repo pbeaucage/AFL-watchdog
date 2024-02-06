@@ -10,14 +10,14 @@
     	  "suppress_alerts": ["server_down", "server_paused_error", "server_idle_timeout", "server_paused", "server_stuck"],
     	   "friendly_name": "Test Server", 
     	"collect_status": true
-    },
+    }
 	],
      "delay": 30,
  	"image_endpoints":
  		{
- 			"test.jpg": ["TestImage","http://www.formulationrobot.com/status/red.jpg"],
+ 			"test.jpg": ["TestImage","http://www.formulationrobot.com/status/red.jpg"]
  			
  		},
  	"upload_endpoint":
- 		"robostat@cloud.formulationrobot.com:/var/www/html/status/black/",
+ 		"robostat@cloud.formulationrobot.com:/var/www/html/status/black/"
  }
