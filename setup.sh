@@ -7,4 +7,4 @@ cp ./index.html ~/.afl/upload/
 
 cp -n ./config.json ~/.afl/watchdog-config.json
 
-
+sudo cp -n afl-watchdog.service /etc/systemd/system/
