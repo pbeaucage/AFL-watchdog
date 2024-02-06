@@ -1,0 +1,12 @@
+[Unit]
+Description=Reverse SSH tunnel to Remote Monitoring Server
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=185
+User=afl642
+ExecStart=/home/afl642/miniconda3/envs/afl_agent/bin/python /home/afl642/AFL-watchdog/afl-watchdog.py
+[Install]
+WantedBy=multi-user.target
