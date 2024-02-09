@@ -247,7 +247,7 @@
              <p>Reachable: ${serverData.reachable ? "Yes" : "No"}, State: ${serverData.state}, Errors: ${serverData.errors}</p>
             <p>Driver Status: ${driverStatusHTML}</p>
             <div class="queue-section">
-              ${renderQueueSection(serverData.queue)}
+              ${serverData.reachable ? renderQueueSection(serverData.queue): ""}
             </div>
           </div>
         `;
