@@ -18,8 +18,28 @@ try:
     afl_system_serial = os.environ['AFL_SYSTEM_SERIAL']
 except KeyError:
     afl_system_serial = config['afl_system_serial']
-stuck_n_checks = config['stuck_n_checks']
-idle_n_checks = config['idle_n_checks']
+config_migrated = False
+if 'stuck_n_checks' in config.keys():
+    config_migrated = True
+    print('Performing config migration --> moving stuck_n_checks into servers')
+    for server in config['servers']:
+        if 'stuck_n_checks' not in server.keys():
+            server['stuck_n_checks'] = config['stuck_n_checks']
+    del config['stuck_n_checks']
+if 'idle_n_checks' in config.keys(): 
+    config_migrated = True
+    print('Performing config migration --> moving idle_n_checks into servers')
+    for server in config['servers']:
+        if 'idle_n_checks' not in server.keys():
+            server['idle_n_checks'] = config['idle_n_checks']
+    del config['idle_n_checks']
+if config_migrated:
+    try:
+        json.dump(config,open(os.path.expanduser('~/.afl/watchdog-config.json'),'w'))
+    except Exception as e:
+        print(f'Error: {e}')
+        print('Could not save config after performing migration, continuing without saving')
+
 servers = config['servers']
 delay = config['delay']
 image_endpoints = config['image_endpoints']
@@ -171,10 +191,10 @@ while True:
             server['last_task_uuid'] = last_task_uuid
             server['last_task_n_checks'] = 0
 
-        if server['last_task_n_checks'] >= idle_n_checks and 'server_idle_timeout' not in server['suppress_alerts']:
+        if server['last_task_n_checks'] >= server['idle_n_checks'] and 'server_idle_timeout' not in server['suppress_alerts']:
             send_alert(f'{server["friendly_name"]} SERVER APPEARS IDLE, has not run for last {server["last_task_n_checks"]} checks')
             server_status['errors'] += 'Server Idle | '
-        if server['running_task_n_checks'] >= stuck_n_checks and 'server_stuck' not in server['suppress_alerts']:
+        if server['running_task_n_checks'] >= server['stuck_n_checks'] and 'server_stuck' not in server['suppress_alerts']:
             send_alert(f'{server["friendly_name"]} SERVER APPEARS STUCK running for last {server["last_task_n_checks"]} checks')
             server_status['errors'] += 'Server Stuck | '
     json.dump(status_dict,open(os.path.expanduser('~/.afl/upload/status.json'),'w'))
