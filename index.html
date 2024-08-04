@@ -24,24 +24,19 @@
       border-radius: 50%;
       margin-right: 5px;
     }
-    .reachable-indicator {
-      background-color: green;
-    }
-    .unreachable-indicator {
-      background-color: red;
-    }
+    .indicator-light.status-green { background-color: #00ff00; }
+    .indicator-light.status-red { background-color: #ff0000; }
+    .indicator-light.status-blue { background-color: #0000ff; }
+    .indicator-light.status-maroon { background-color: #800000; }
     .server-container {
       margin-top: 20px;
       padding: 10px;
       border: 1px solid #ccc;
     }
-    .reachable {
-      background-color: chartreuse;
-    }
-    .unreachable {
-      background-color: darksalmon;
-      color: white;
-    }
+    .server-container.status-green { background-color: chartreuse; }
+    .server-container.status-red { background-color: darksalmon; color: white; }
+    .server-container.status-blue { background-color: lightskyblue; }
+    .server-container.status-maroon { background-color: #ffb6c1; }
     .queue-section {
       margin-top: 10px;
     }
@@ -96,7 +91,6 @@
       border: 1px solid #ccc;
       margin-right: 5px;
       background-color: #fff;
-
     }
 
     .image-container {
@@ -114,21 +108,21 @@
       margin-top: 20px;
     }
     .driver-status-item {
-  border: 1px solid #ccc;
-  padding: 2px 5px;
-  margin: 2px;
-  border-radius: 4px;
-  display: inline-block;
-}
-#dashboard-header {
-  background-color: #3498db; /* Header background color */
-  color: #fff; /* Text color */
-  padding: 10px; /* Padding around the header content */
-  text-align: center; /* Center-align text */
-  font-size: 20px; /* Font size */
-  font-weight: bold; /* Bold text */
-  margin-bottom: 20px;
-}
+      border: 1px solid #ccc;
+      padding: 2px 5px;
+      margin: 2px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    #dashboard-header {
+      background-color: #3498db;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
@@ -144,30 +138,25 @@
     <div class="camera-images-container" id="cameraImagesContainer"></div>
 
     <div id="server-status"></div>
-
-    
   </div>
 
   <script>
     let selectedCamera = 0;
     let showImages = true;
-    let imagesVisible = true; // Add this line to initialize the variable
+    let imagesVisible = true;
 
- function toggleImages() {
-    const cameraImages = document.querySelectorAll('.camera-image');
-
-    imagesVisible = !imagesVisible;
-
-    cameraImages.forEach((image, index) => {
-      const isSelectedCamera = index === selectedCamera;
-      image.classList.toggle('show', isSelectedCamera && imagesVisible);
-    });
-  }
+    function toggleImages() {
+      const cameraImages = document.querySelectorAll('.camera-image');
+      imagesVisible = !imagesVisible;
+      cameraImages.forEach((image, index) => {
+        const isSelectedCamera = index === selectedCamera;
+        image.classList.toggle('show', isSelectedCamera && imagesVisible);
+      });
+    }
 
     function selectCameraTab(tab, index) {
       selectedCamera = index;
       updateImageVisibility();
-
       const tabs = document.querySelectorAll('.tab');
       tabs.forEach(t => t.classList.remove('selected-tab'));
       tab.classList.add('selected-tab');
@@ -190,10 +179,7 @@
     }
 
     function fetchAndUpdateData() {
-      // Replace 'YOUR_JSON_URL' with the actual URL of your JSON file
       const jsonUrl = 'status.json';
-
-      // Fetch JSON data from the specified URL
       fetch(jsonUrl)
         .then(response => response.json())
         .then(jsonData => {
@@ -203,29 +189,41 @@
         .catch(error => console.error('Error fetching JSON:', error));
     }
 
+    function getStatusClass(serverData) {
+      if (!serverData.reachable) {
+        return 'status-red';
+      } else if (serverData.errors && serverData.errors.includes('Server Stuck')) {
+        return 'status-maroon';
+      } else if (serverData.state === 'Active') {
+        return 'status-blue';
+      } else if (serverData.errors) {
+        return 'status-red';
+      } else {
+        return 'status-green';
+      }
+    }
+
     function updateDashboard(jsonData) {
       document.getElementById("lastUpdated").innerText = jsonData.last_updated;
-     
-      const aflSystemSerial = jsonData.afl_system_serial || ''; // Set default value if the field is missing
+      const aflSystemSerial = jsonData.afl_system_serial || '';
       document.title = `AFL System Status: ${aflSystemSerial}`;
-
       const mainPageHeader = document.getElementById("dashboard-header");
       mainPageHeader.innerText = `AFL System Status: ${aflSystemSerial}`;
-    
+
       const serverStatusContainer = document.getElementById("server-status");
       serverStatusContainer.innerHTML = "";
-
       const serverIndicatorsContainer = document.getElementById("server-indicators");
       serverIndicatorsContainer.innerHTML = "";
-      
+
       Object.keys(jsonData).filter(key => key !== 'last_updated' && key !== 'cameras' && key !== 'afl_system_serial').forEach(serverName => {
         const serverData = jsonData[serverName];
-        
+        const statusClass = getStatusClass(serverData);
+
         const serverIndicator = document.createElement("div");
         serverIndicator.className = "server-indicator";
-        
+
         const indicatorLight = document.createElement("div");
-        indicatorLight.className = `indicator-light ${serverData.reachable && serverData.errors === '' ? 'reachable-indicator' : 'unreachable-indicator'}`;
+        indicatorLight.className = `indicator-light ${statusClass}`;
         indicatorLight.title = serverName;
         indicatorLight.onclick = () => scrollToServer(serverName);
         serverIndicator.appendChild(indicatorLight);
@@ -237,14 +235,14 @@
         serverIndicator.appendChild(serverNameElement);
 
         serverIndicatorsContainer.appendChild(serverIndicator);
-        
+
         const driverStatus = serverData.driver_status || [];
         const driverStatusHTML = driverStatus.map(status => `<span class="driver-status-item">${status}</span>`).join(' ');
 
         const serverInfoHTML = `
-          <div id="${serverName}-container" class="server-container ${serverData.reachable && serverData.errors === '' ? 'reachable' : 'unreachable'}">
+          <div id="${serverName}-container" class="server-container ${statusClass}">
             <h2>${serverName}</h2>
-             <p>Reachable: ${serverData.reachable ? "Yes" : "No"}, State: ${serverData.state}, Errors: ${serverData.errors}</p>
+            <p>Reachable: ${serverData.reachable ? "Yes" : "No"}, State: ${serverData.state}, Errors: ${serverData.errors}</p>
             <p>Driver Status: ${driverStatusHTML}</p>
             <div class="queue-section">
               ${serverData.reachable ? renderQueueSection(serverData.queue): ""}
@@ -255,12 +253,10 @@
       });
     }
 
-   function updateImageViewer(jsonData) {
+    function updateImageViewer(jsonData) {
       const cameras = jsonData.cameras || {};
-
       const cameraSelectorContainer = document.getElementById("cameraSelectorContainer");
       cameraSelectorContainer.innerHTML = '';
-
       Object.entries(cameras).forEach(([cameraName, cameraImageSrc], index) => {
         if (cameraName && cameraImageSrc) {
           const tab = document.createElement("div");
@@ -270,10 +266,8 @@
           cameraSelectorContainer.appendChild(tab);
         }
       });
-
       const cameraImagesContainer = document.getElementById("cameraImagesContainer");
       cameraImagesContainer.innerHTML = '';
-
       Object.entries(cameras).forEach(([cameraName, cameraImageSrc], index) => {
         if (cameraName && cameraImageSrc) {
           const image = document.createElement("img");
@@ -288,7 +282,6 @@
     function renderQueueSection(queue) {
       const queueSections = ["History", "Active", "Future"];
       let sectionHTML = "";
-
       queue.forEach((tasks, index) => {
         const reversedTasks = index === 0 ? tasks.slice(0).reverse() : tasks;
         const sectionTasksHTML = reversedTasks.length > 0 ? `
@@ -303,7 +296,6 @@
           </div>` : '';
         sectionHTML += sectionTasksHTML;
       });
-
       return sectionHTML;
     }
 
