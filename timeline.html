@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Tasks Timeline</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+        }
+        #timeline {
+            width: 100%;
+            height: 600px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #controls {
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .offset-input {
+            margin-right: 15px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .offset-input label {
+            margin-right: 5px;
+        }
+        .offset-input input {
+            width: 60px;
+        }
+        #redrawButton {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .vis-item {
+            border-color: #2196F3;
+            background-color: #2196F3;
+            color: white;
+        }
+        .vis-time-axis .vis-text {
+            color: #333;
+        }
+        .vis-time-axis .vis-grid.vis-minor {
+            border-color: #f0f0f0;
+        }
+        .vis-time-axis .vis-grid.vis-major {
+            border-color: #e0e0e0;
+        }
+
+        .vis-tooltip {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 400px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .tooltip-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .tooltip-content .json-key {
+            color: #88ccff;
+        }
+
+        .tooltip-content .json-string {
+            color: #aaffaa;
+        }
+
+        .tooltip-content .json-number {
+            color: #ffaa00;
+        }
+
+        .tooltip-content .json-boolean {
+            color: #ff88ff;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <!-- Offset inputs will be dynamically added here -->
+        <button id="redrawButton">Redraw Timeline</button>
+    </div>
+    <div id="timeline"></div>
+    <script src="timeline.js"></script>
+</body>
+</html>
