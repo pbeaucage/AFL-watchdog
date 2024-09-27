@@ -8,8 +8,8 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 import datetime
+import simplejson
 import json
-
 config = json.load(open(os.path.expanduser('~/.afl/watchdog-config.json'),'r'))
 slack_token = config['slack_token']
 slack_channel = config['slack_channel'] 
@@ -197,7 +197,7 @@ while True:
         if server['running_task_n_checks'] >= server['stuck_n_checks'] and 'server_stuck' not in server['suppress_alerts']:
             send_alert(f'{server["friendly_name"]} SERVER APPEARS STUCK running for last {server["last_task_n_checks"]} checks')
             server_status['errors'] += 'Server Stuck | '
-    json.dump(status_dict,open(os.path.expanduser('~/.afl/upload/status.json'),'w'))
+    simplejson.dump(status_dict,open(os.path.expanduser('~/.afl/upload/status.json'),'w'),ignore_nan = True)
     print(f'--> fetching images for status board')
     for fname,endpoint in image_endpoints.items():
         print(f'    --> getting {fname} from {endpoint[1]}, for display as {endpoint[0]}')
