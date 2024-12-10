@@ -142,7 +142,8 @@ while True:
             
         # check for server_down    
         try:
-            c.login('WatchDog')
+            # check for server_paused
+            state = c.queue_state().content.decode(encoding='utf-8')
         except Exception:
             server_status['reachable'] = False
             if 'server_down' not in server['suppress_alerts']:
@@ -150,9 +151,7 @@ while True:
             continue
         server_status['reachable'] = True
 
-        # check for server_paused
-        state = c.queue_state().content.decode(encoding='utf-8')
-        
+        # now pick up from state processing
         server_status['state'] = state
         server_status['errors'] = ''
         if state == 'Paused' and 'server_paused' not in server['suppress_alerts']:
